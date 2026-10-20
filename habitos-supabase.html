@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#5B4CF0">
+<title>Mis hábitos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+
+<style>
+/* ===== Colores (modo claro y oscuro) ===== */
+:root {
+  --bg: #EEF0FA;
+  --surface: #fff;
+  --ink: #1D1F3F;
+  --muted: #6B6F96;
+  --line: #E1E4F3;
+  --accent: #5B4CF0;
+  --tint: #EFEDFF;
+  --done: #17B890;
+  --flame: #FF8A1F;
+  --flame2:#FFC53D;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top,0px);
+  padding-bottom: env(safe-area-inset-bottom,0px);
+}
+
+@media (prefers-color-scheme:dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12132B;
+    --surface: #1B1D3D;
+    --ink: #EEF0FF;
+    --muted: #9A9EC9;
+    --line: #2B2E57;
+    --accent: #8B7FFF;
+    --tint: #262857;
+    --done: #2FD3A8;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #12132B;
+  --surface: #1B1D3D;
+  --ink: #EEF0FF;
+  --muted: #9A9EC9;
+  --line: #2B2E57;
+  --accent: #8B7FFF;
+  --tint: #262857;
+  --done: #2FD3A8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-padding-top: env(safe-area-inset-top,0px);
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Bricolage Grotesque',system-ui,-apple-system,'Segoe UI',sans-serif;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== Layout general ===== */
+.wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 28px 16px 80px;
+}
+
+header h1 {
+  font-size: clamp(2rem,7vw,3rem);
+  font-weight: 800;
+  letter-spacing: -.03em;
+  margin: 0;
+  line-height: 1.05;
+}
+
+.date {
+  color: var(--muted);
+  margin: 6px 0 18px;
+  text-transform: capitalize;
+}
+
+/* ===== Resumen de hoy y formulario ===== */
+.today {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.today b {
+  font-size: 1.5rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.bar {
+  flex: 1;
+  height: 12px;
+  background: var(--line);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.bar i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg,var(--accent),var(--done));
+  border-radius: 99px;
+  transition: width .5s cubic-bezier(.2,.8,.2,1);
+}
+
+form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  padding: 13px 16px;
+}
+
+input: focus-visible,button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.add {
+  font: inherit;
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent);
+  border: 0;
+  border-radius: 14px;
+  padding: 0 20px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.add:active {
+  transform: scale(.97);
+}
+
+/* ===== Tabla de hábitos ===== */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 8px 0 4px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px 10px;
+}
+
+.nav span {
+  font-weight: 700;
+}
+
+.nav button {
+  font: inherit;
+  font-size: 1.2rem;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.nav button:disabled {
+  opacity: .3;
+  cursor: default;
+}
+
+.scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+th,td {
+  padding: 6px 2px;
+  text-align: center;
+}
+
+th {
+  font-weight: 500;
+  color: var(--muted);
+  font-size: .78rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+
+th b {
+  display: block;
+  font-size: 1rem;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+th.t b {
+  color: var(--accent);
+}
+
+td.t,th.t {
+  background: var(--tint);
+}
+
+.name {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--surface);
+  text-align: left;
+  padding-left: 14px;
+  padding-right: 8px;
+  min-width: 118px;
+  max-width: 150px;
+}
+
+th.name {
+  background: var(--surface);
+}
+
+.hn {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.del {
+  font: inherit;
+  font-size: .75rem;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 8px;
+  flex: none;
+}
+
+.del.ask {
+  background: #E5484D;
+  color: #fff;
+}
+
+.streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+  font-size: .85rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.streak.on {
+  color: var(--flame);
+  font-weight: 800;
+}
+
+.streak small {
+  color: var(--muted);
+  font-weight: 400;
+  margin-left: 2px;
+}
+
+.pop {
+  animation: pop .8s cubic-bezier(.2,1.6,.4,1);
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.45) rotate(-6deg);
+  }
+  60% {
+    transform: scale(.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ===== Casillas de cada día ===== */
+.ck {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: transparent;
+  cursor: pointer;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  transition: background .2s,border-color .2s,transform .15s;
+}
+
+.ck:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.ck:active:not(:disabled) {
+  transform: scale(.88);
+}
+
+.ck:disabled {
+  opacity: .3;
+  cursor: default;
+}
+
+.ck svg {
+  width: 16px;
+  height: 16px;
+  stroke: #fff;
+  stroke-width: 3.5;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  transition: stroke-dashoffset .3s .05s;
+}
+
+.ck.on {
+  background: var(--done);
+  border-color: var(--done);
+}
+
+.ck.on svg {
+  stroke-dashoffset: 0;
+}
+
+.empty {
+  padding: 34px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* ===== Animación de celebración ===== */
+.p {
+  position: fixed;
+  pointer-events: none;
+  z-index: 60;
+}
+
+.rg {
+  position: fixed;
+  pointer-events: none;
+  z-index: 59;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid var(--flame);
+  transform: translate(-50%,-50%);
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(24px + env(safe-area-inset-bottom,0px));
+  transform: translate(-50%,30px);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 13px 22px;
+  border-radius: 99px;
+  font-weight: 700;
+  opacity: 0;
+  pointer-events: none;
+  transition: all .35s cubic-bezier(.2,1.4,.4,1);
+  z-index: 70;
+  white-space: nowrap;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%,0);
+}
+
+.foot {
+  color: var(--muted);
+  font-size: .82rem;
+  text-align: center;
+  margin-top: 16px;
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .pop {
+    animation: none;
+  }
+  .toast,.bar i {
+    transition: none;
+  }
+}
+
+
+/* ===== Acceso, cabecera y botones secundarios ===== */
+[hidden] { display: none !important; }
+.top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.auth { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 24px; display: grid; gap: 12px; max-width: 420px; margin: 40px auto; }
+.auth h2 { margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -.02em; }
+.auth p { margin: 0; color: var(--muted); }
+.row { display: flex; gap: 8px; }
+.row .add { flex: 1; padding: 13px 20px; }
+.ghost { font: inherit; font-weight: 700; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; cursor: pointer; white-space: nowrap; }
+.msg { color: #E5484D !important; font-size: .9rem; min-height: 1.2em; }
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <!-- ===================== PANTALLA DE ACCESO ===================== -->
+  <section class="auth" id="auth" hidden>
+    <h2>Mis hábitos</h2>
+    <p>Entra para ver tus hábitos y rachas desde cualquier dispositivo.</p>
+    <input id="email" type="email" placeholder="Correo electrónico" autocomplete="email" aria-label="Correo electrónico">
+    <input id="pass" type="password" placeholder="Contraseña (mínimo 6 caracteres)" autocomplete="current-password" aria-label="Contraseña">
+    <p class="msg" id="authMsg" role="alert"></p>
+    <div class="row">
+      <button class="add" id="btnLogin">Entrar</button>
+      <button class="ghost" id="btnSignup">Crear cuenta</button>
+    </div>
+  </section>
+
+  <!-- ===================== APLICACIÓN ===================== -->
+  <div id="app" hidden>
+    <header class="top">
+      <div>
+        <h1>Mis hábitos</h1>
+        <p class="date" id="date"></p>
+      </div>
+      <button class="ghost" id="btnLogout">Salir</button>
+    </header>
+
+    <!-- Resumen de hoy -->
+    <div class="today">
+      <b id="tcount">0/0</b>
+      <div class="bar"><i id="tbar"></i></div>
+      <span id="tlabel">hoy</span>
+    </div>
+
+    <!-- Añadir hábito -->
+    <form id="f" autocomplete="off">
+      <input id="in" maxlength="40" placeholder="Nuevo hábito, por ejemplo: Leer 20 minutos" aria-label="Nombre del hábito">
+      <button class="add" type="submit">Añadir</button>
+    </form>
+
+    <!-- Tabla semanal -->
+    <div class="card">
+      <div class="nav">
+        <button id="prev" aria-label="Semana anterior">‹</button>
+        <span id="wlabel"></span>
+        <button id="next" aria-label="Semana siguiente">›</button>
+      </div>
+      <div class="scroll"><table id="tbl"></table></div>
+    </div>
+
+    <p class="foot">Cada hábito tiene su propia racha: sube un día cada vez y se rompe si te saltas uno.</p>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* =====================================================================
+   1. CONFIGURACIÓN  (rellena estos dos valores: Supabase > Project Settings > API)
+   ===================================================================== */
+const SUPABASE_URL      = 'https://TU-PROYECTO.supabase.co';
+const SUPABASE_ANON_KEY = 'TU-ANON-KEY';
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
+/* =====================================================================
+   2. ESTADO
+   habits = [{ id, name, current_streak, best_streak, done: { 'YYYY-MM-DD': true } }]
+   ===================================================================== */
+let user = null;          // usuario con sesión iniciada
+let habits = [];          // hábitos con sus días marcados
+let weekOffset = 0;       // 0 = esta semana, -1 = la anterior...
+let pendingDelete = null; // id del hábito pendiente de confirmar borrado
+
+
+/* =====================================================================
+   3. UTILIDADES
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+
+const esc = s => s.replace(/[&<>"']/g, c =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const dayKey = d =>
+  d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+
+const noon = () => { const d = new Date(); d.setHours(12, 0, 0, 0); return d; };
+
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function toast(text) {
+  const el = $('toast');
+  el.textContent = text;
+  el.classList.add('show');
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+
+/* =====================================================================
+   4. RACHAS  (se calculan por hábito a partir de sus días marcados)
+   ===================================================================== */
+
+// Días seguidos hasta hoy. Si hoy aún no está hecho, la racha sigue viva desde ayer.
+function currentStreak(h) {
+  const d = noon();
+  if (!h.done[dayKey(d)]) d.setDate(d.getDate() - 1);
+  let n = 0;
+  while (h.done[dayKey(d)]) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+
+// Mejor racha de la historia de ese hábito.
+function bestStreak(h) {
+  const days = Object.keys(h.done).sort();
+  let best = 0, run = 0, prev = null;
+  for (const day of days) {
+    const gap = prev ? Math.round((new Date(day + 'T12:00') - new Date(prev + 'T12:00')) / 864e5) : 0;
+    run = gap === 1 ? run + 1 : 1;
+    best = Math.max(best, run);
+    prev = day;
+  }
+  return best;
+}
+
+// Guarda en la base de datos las rachas del hábito si han cambiado.
+async function syncStreak(h) {
+  const current = currentStreak(h), best = bestStreak(h);
+  if (current === h.current_streak && best === h.best_streak) return;
+  h.current_streak = current;
+  h.best_streak = best;
+  await Api.saveStreaks(h);
+}
+
+
+/* =====================================================================
+   5. API  (todas las llamadas a Supabase)
+   ===================================================================== */
+
+// Supabase devuelve máx. 1000 filas por consulta: se pide por páginas.
+async function fetchAllLogs() {
+  let all = [], from = 0;
+  while (true) {
+    const { data, error } = await db.from('habit_logs').select('habit_id, day').range(from, from + 999);
+    if (error) throw error;
+    all = all.concat(data);
+    if (data.length < 1000) return all;
+    from += 1000;
+  }
+}
+
+const Api = {
+  async loadHabits() {
+    const { data, error } = await db.from('habits').select('*').order('created_at');
+    if (error) throw error;
+    const byHabit = {};
+    (await fetchAllLogs()).forEach(l => { (byHabit[l.habit_id] ||= {})[l.day] = true; });
+    return data.map(h => ({ ...h, done: byHabit[h.id] || {} }));
+  },
+
+  async addHabit(name) {
+    const { data, error } = await db.from('habits').insert({ name, user_id: user.id }).select().single();
+    if (error) throw error;
+    return { ...data, done: {} };
+  },
+
+  async deleteHabit(id) {
+    const { error } = await db.from('habits').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  async setDay(habitId, day, on) {
+    const query = on
+      ? db.from('habit_logs').upsert({ habit_id: habitId, user_id: user.id, day })
+      : db.from('habit_logs').delete().eq('habit_id', habitId).eq('day', day);
+    const { error } = await query;
+    if (error) throw error;
+  },
+
+  async saveStreaks(h) {
+    const { error } = await db.from('habits')
+      .update({ current_streak: h.current_streak, best_streak: h.best_streak })
+      .eq('id', h.id);
+    if (error) throw error;
+  }
+};
+
+
+/* =====================================================================
+   6. SESIÓN  (registro, entrada y salida)
+   ===================================================================== */
+function showAuth(message = '') {
+  user = null;
+  habits = [];
+  $('app').hidden = true;
+  $('auth').hidden = false;
+  $('authMsg').textContent = message;
+}
+
+async function startApp(session) {
+  user = session.user;
+  $('auth').hidden = true;
+  $('app').hidden = false;
+  $('tbl').innerHTML = '<tr><td class="empty">Cargando tus hábitos…</td></tr>';
+  try {
+    habits = await Api.loadHabits();
+    habits.forEach(h => syncStreak(h).catch(() => {}));
+  } catch (e) {
+    console.error(e);
+    toast('No se pudieron cargar los hábitos');
+  }
+  render();
+}
+
+async function signIn() {
+  $('authMsg').textContent = '';
+  const { error } = await db.auth.signInWithPassword({ email: $('email').value.trim(), password: $('pass').value });
+  if (error) $('authMsg').textContent = error.message;
+}
+
+async function signUp() {
+  $('authMsg').textContent = '';
+  const { data, error } = await db.auth.signUp({ email: $('email').value.trim(), password: $('pass').value });
+  if (error) $('authMsg').textContent = error.message;
+  else if (!data.session) $('authMsg').textContent = 'Cuenta creada. Revisa tu correo para confirmarla y luego pulsa Entrar.';
+}
+
+
+/* =====================================================================
+   7. ACCIONES  (lo que hace el usuario)
+   ===================================================================== */
+async function toggleDay(h, day) {
+  const wasOn = !!h.done[day];
+  const before = currentStreak(h);
+
+  // 1) Cambio inmediato en pantalla
+  if (wasOn) delete h.done[day]; else h.done[day] = true;
+  render();
+  const after = currentStreak(h);
+  if (after > before) celebrate(h, day, after);
+
+  // 2) Guardado en Supabase (si falla, se deshace el cambio)
+  try {
+    await Api.setDay(h.id, day, !wasOn);
+    await syncStreak(h);
+  } catch (e) {
+    console.error(e);
+    if (wasOn) h.done[day] = true; else delete h.done[day];
+    render();
+    toast('No se pudo guardar. Revisa tu conexión.');
+  }
+}
+
+async function addHabit(name) {
+  try {
+    habits.push(await Api.addHabit(name));
+    render();
+  } catch (e) {
+    console.error(e);
+    toast('No se pudo añadir el hábito');
+  }
+}
+
+async function removeHabit(id) {
+  const backup = habits;
+  habits = habits.filter(h => h.id !== id);
+  render();
+  try {
+    await Api.deleteHabit(id);
+  } catch (e) {
+    console.error(e);
+    habits = backup;
+    render();
+    toast('No se pudo borrar el hábito');
+  }
+}
+
+
+/* =====================================================================
+   8. PINTAR LA PANTALLA
+   ===================================================================== */
+const CHECK_ICON = '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
+// Los 7 días (lunes a domingo) de la semana mostrada.
+function weekDays() {
+  const t = noon();
+  const monday = new Date(t);
+  monday.setDate(t.getDate() - ((t.getDay() + 6) % 7) + weekOffset * 7);
+  return [...Array(7)].map((_, i) => { const d = new Date(monday); d.setDate(monday.getDate() + i); return d; });
+}
+
+function renderHeader(days, today) {
+  const short = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short' });
+  $('date').textContent = new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+  $('wlabel').textContent = weekOffset === 0 ? 'Esta semana' : short.format(days[0]) + ' – ' + short.format(days[6]);
+  $('next').disabled = weekOffset >= 0;
+
+  const total = habits.length, done = habits.filter(h => h.done[today]).length;
+  $('tcount').textContent = done + '/' + total;
+  $('tbar').style.width = (total ? done / total * 100 : 0) + '%';
+  $('tlabel').textContent = total && done === total ? '¡Todo hecho hoy!' : 'hechos hoy';
+}
+
+function renderRow(h, days, today) {
+  const streak = currentStreak(h), best = bestStreak(h), asking = pendingDelete === h.id;
+
+  const cells = days.map(d => {
+    const key = dayKey(d), on = !!h.done[key];
+    return '<td class="' + (key === today ? 't' : '') + '">'
+      + '<button class="ck' + (on ? ' on' : '') + '" data-h="' + h.id + '" data-d="' + key + '"'
+      + (key > today ? ' disabled' : '') + ' aria-pressed="' + on + '"'
+      + ' aria-label="' + esc(h.name) + ', ' + key + '">' + CHECK_ICON + '</button></td>';
+  }).join('');
+
+  return '<tr><td class="name">'
+    + '<div class="hn"><span>' + esc(h.name) + '</span>'
+    + '<button class="del' + (asking ? ' ask' : '') + '" data-del="' + h.id + '" aria-label="Borrar hábito">' + (asking ? '¿Borrar?' : '✕') + '</button></div>'
+    + '<span class="streak' + (streak ? ' on' : '') + '" data-s="' + h.id + '"><span>🔥</span>'
+    + streak + (streak === 1 ? ' día' : ' días') + (best > streak ? '<small>mejor ' + best + '</small>' : '') + '</span>'
+    + '</td>' + cells + '</tr>';
+}
+
+function render() {
+  if (!user) return;
+  const days = weekDays(), today = dayKey(noon());
+  renderHeader(days, today);
+
+  if (!habits.length) {
+    $('tbl').innerHTML = '<tr><td class="empty">Aún no tienes hábitos. Añade el primero y empieza tu racha.</td></tr>';
+    return;
+  }
+  const head = '<thead><tr><th class="name">Hábito</th>'
+    + days.map((d, i) => '<th class="' + (dayKey(d) === today ? 't' : '') + '">' + WEEKDAYS[i] + '<b>' + d.getDate() + '</b></th>').join('')
+    + '</tr></thead>';
+  $('tbl').innerHTML = head + '<tbody>' + habits.map(h => renderRow(h, days, today)).join('') + '</tbody>';
+}
+
+
+/* =====================================================================
+   9. ANIMACIÓN DE CELEBRACIÓN (cuando sube la racha)
+   ===================================================================== */
+function celebrate(h, day, streak) {
+  burst(document.querySelector('[data-h="' + h.id + '"][data-d="' + day + '"]'));
+  const badge = document.querySelector('[data-s="' + h.id + '"]');
+  if (badge) badge.classList.add('pop');
+  toast(streak === 1 ? '🔥 ¡Racha encendida!' : '🔥 ¡Racha de ' + streak + ' días!');
+}
+
+function burst(el) {
+  if (!el || reduceMotion) return;
+  const rect = el.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+  const colors = ['#FF8A1F', '#FFC53D', '#5B4CF0', '#17B890', '#FF5C8A'];
+
+  // Anillo que se expande
+  const ring = document.createElement('i');
+  ring.className = 'rg';
+  ring.style.left = cx + 'px';
+  ring.style.top = cy + 'px';
+  document.body.appendChild(ring);
+  ring.animate(
+    [{ transform: 'translate(-50%,-50%) scale(.4)', opacity: 1 }, { transform: 'translate(-50%,-50%) scale(2.6)', opacity: 0 }],
+    { duration: 600, easing: 'ease-out' }
+  ).onfinish = () => ring.remove();
+
+  // Confeti
+  for (let i = 0; i < 24; i++) {
+    const p = document.createElement('i');
+    const size = 6 + Math.random() * 6, angle = Math.random() * Math.PI * 2, dist = 50 + Math.random() * 90;
+    p.className = 'p';
+    p.style.cssText = 'left:' + cx + 'px;top:' + cy + 'px;width:' + size + 'px;height:' + size + 'px;'
+      + 'background:' + colors[i % 5] + ';border-radius:' + (i % 2 ? '50%' : '2px');
+    document.body.appendChild(p);
+    p.animate([
+      { transform: 'translate(-50%,-50%) scale(1)', opacity: 1 },
+      { transform: 'translate(calc(-50% + ' + Math.cos(angle) * dist + 'px), calc(-50% + ' + (Math.sin(angle) * dist + 45) + 'px)) rotate(' + Math.random() * 540 + 'deg) scale(.3)', opacity: 0 }
+    ], { duration: 700 + Math.random() * 500, easing: 'cubic-bezier(.2,.7,.3,1)' }).onfinish = () => p.remove();
+  }
+}
+
+
+/* =====================================================================
+   10. EVENTOS E INICIO
+   ===================================================================== */
+$('tbl').addEventListener('click', e => {
+  const check = e.target.closest('[data-h]');
+  const del = e.target.closest('[data-del]');
+
+  if (del) {                                   // borrar: 1.er toque pide confirmar, 2.º borra
+    const id = del.dataset.del;
+    if (pendingDelete === id) { pendingDelete = null; removeHabit(id); return; }
+    pendingDelete = id;
+    render();
+    setTimeout(() => { if (pendingDelete === id) { pendingDelete = null; render(); } }, 3000);
+    return;
+  }
+  if (check) toggleDay(habits.find(h => h.id === check.dataset.h), check.dataset.d);
+});
+
+$('f').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = $('in').value.trim();
+  if (!name) return;
+  $('in').value = '';
+  addHabit(name);
+});
+
+$('prev').onclick = () => { weekOffset--; render(); };
+$('next').onclick = () => { if (weekOffset < 0) { weekOffset++; render(); } };
+$('btnLogin').onclick = signIn;
+$('btnSignup').onclick = signUp;
+$('btnLogout').onclick = () => db.auth.signOut();
+$('pass').addEventListener('keydown', e => { if (e.key === 'Enter') signIn(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+
+// Arranque: Supabase avisa de si hay sesión guardada o no
+if (SUPABASE_URL.includes('TU-PROYECTO')) {
+  showAuth('Falta configurar SUPABASE_URL y SUPABASE_ANON_KEY al principio del script.');
+} else {
+  db.auth.onAuthStateChange((_event, session) => {
+    if (!session) return showAuth();
+    if (user && user.id === session.user.id) return;   // evita recargar al renovar el token
+    startApp(session);
+  });
+}
+</script>
+</body>
+</html>
