@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 
 <style>
 /* ===== Colores (modo claro y oscuro) ===== */
@@ -450,7 +450,7 @@ th.name {
 <div class="wrap">
 
   <!-- ===================== PANTALLA DE ACCESO ===================== -->
-  <section class="auth" id="auth" hidden>
+  <section class="auth" id="auth">
     <h2>Mis hábitos</h2>
     <p>Entra para ver tus hábitos y rachas desde cualquier dispositivo.</p>
     <input id="email" type="email" placeholder="Correo electrónico" autocomplete="email" aria-label="Correo electrónico">
@@ -505,10 +505,15 @@ th.name {
 /* =====================================================================
    1. CONFIGURACIÓN  (rellena estos dos valores: Supabase > Project Settings > API)
    ===================================================================== */
-const SUPABASE_URL      = 'https://rzzlmkcowqyzsintzmzn.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_NwLY-tpbyMDp6at9vA6hgQ_XB5FvAQO';
+const SUPABASE_URL      = 'https://TU-PROYECTO.supabase.co';
+const SUPABASE_ANON_KEY = 'TU-ANON-KEY';
 
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let db = null;
+try {
+  db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} catch (e) {
+  console.error('No se pudo iniciar Supabase:', e);
+}
 
 
 /* =====================================================================
@@ -863,7 +868,10 @@ $('pass').addEventListener('keydown', e => { if (e.key === 'Enter') signIn(); })
 document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
 
 // Arranque: Supabase avisa de si hay sesión guardada o no
-if (SUPABASE_URL.includes('TU-PROYECTO')) {
+if (!db) {
+  showAuth('No se pudo cargar Supabase. Desactiva el bloqueador de anuncios o revisa tu conexión y recarga la página.');
+  document.querySelectorAll('#auth button').forEach(b => b.disabled = true);
+} else if (SUPABASE_URL.includes('TU-PROYECTO')) {
   showAuth('Falta configurar SUPABASE_URL y SUPABASE_ANON_KEY al principio del script.');
 } else {
   db.auth.onAuthStateChange((_event, session) => {
